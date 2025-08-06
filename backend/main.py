@@ -11,7 +11,7 @@ load_dotenv()
 API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
 current_location = "Toa Payoh Lorong 1, Block 172"  # Toa Payoh
-destination_location = "Pasir Ris Beach"
+destination_location = "Changi Bay Point"
 
 prompt = f"""
 Current: {current_location}
