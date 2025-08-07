@@ -10,36 +10,36 @@ load_dotenv()
 
 API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
-current_location = "Toa Payoh Lorong 1, Block 172"  # Toa Payoh
-destination_location = "Changi Bay Point"
+current_location = "310172"  # Toa Payoh
+destination_location = "Pasir Ris Park"
 
 prompt = f"""
-Current: {current_location}
+Current location: {current_location}  
 Destination: {destination_location}
 
-Return me as a python dictionary format PCN optimised routes with names to get to my destination, don't add any text or comment, i need this for processing.
+Generate a Python dictionary of the PCN-optimised route using **actual park connector names** from the given current location to the destination.
 
-Example output:
+⚠️ Use the provided current and destination values. Do not copy from the example.
+
+⚠️ Make sure to return the route in sequential order, starting from the current location and ending at the destination.
+
+⚠️ Only return the dictionary — no explanations, no extra text.
+
+Use this format as a reference (do not reuse the same values):
+
+Example format:
 {{
     "Start_Point": {{
-        "name": "Toa Payoh (310172)"
+        "name": "{current_location}"
     }},
     "Route": [
-        {{
-            "name": "Kallang Park Connector"
-        }},
-        {{
-            "name": "Tanjong Rhu Promenade Park Connector"
-        }},
-        {{
-            "name": "Eastern Coastal Loop / Siglap Park Connector"
-        }},
-        {{
-            "name": "East Coast Park Connector"
-        }}
+        {{"name": "<Park Connector Name 1>"}},
+        {{"name": "<Park Connector Name 2>"}},
+        {{"name": "<Park Connector Name 3>"}},
+        {{"name": "<Park Connector Name 4>"}}
     ],
     "Destination": {{
-        "name": "East Coast Park (Area G)"
+        "name": "{destination_location}"
     }}
 }}
 """
