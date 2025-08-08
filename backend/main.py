@@ -5,6 +5,7 @@ import webbrowser
 import os
 import re
 from dotenv import load_dotenv
+from data import PCN
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ Current location: {current_location}
 Destination: {destination_location}
 
 Generate a Python dictionary of the PCN-optimised route using **actual park connector names** from the given current location to the destination.
+You can refer to the official list of park connectors in Singapore from this list {",".join(PCN)}
 
 ⚠️ Use the provided current and destination values. Do not copy from the example.
 
