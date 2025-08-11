@@ -19,7 +19,7 @@ export const getRoute = async (req, res, next) => {
     const mapsUrl = buildGoogleMapsUrl(cleanedRoute);
 
     console.log("Cleaned Route:", cleanedRoute);
-
+    console.log("Google Maps URL:", mapsUrl);
     if (openInBrowser) {
       const open = (await import("open")).default;
       await open(mapsUrl);

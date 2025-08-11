@@ -20,7 +20,7 @@ const __dirname = path.resolve(); // Get the current directory name
 if (process.env.NODE_ENV !== "production") {
   app.use(
     cors({
-      origin: "http://localhost:5173", // Allow requests from the frontend
+      origin: "http://localhost:3000", // Allow requests from the frontend
     })
   );
 }
