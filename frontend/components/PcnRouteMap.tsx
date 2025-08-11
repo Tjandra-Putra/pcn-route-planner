@@ -353,21 +353,23 @@ export default function RouteUrlFetcher() {
                   </span>
                 )}
               </h2>
+
               <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] px-2 py-1">
                 {routeDetails ? (
                   <>
                     {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
-                      if (idx === arr.length - 1) return null;
+                      // Remove this line:
+                      // if (idx === arr.length - 1) return null;
 
                       const isFirst = idx === 0;
-                      const isLast = idx === arr.length - 2;
+                      const isLast = idx === arr.length - 1; // changed from arr.length - 2
 
                       return (
                         <div key={idx} className="flex items-center space-x-3 pl-10 relative" style={{ minHeight: "52px" }}>
                           {/* Arrow circle */}
                           <span
                             className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold
-    ${isFirst ? "bg-green-600 text-white" : isLast ? "bg-red-600 text-white" : "bg-blue-600 text-white"}`}
+                ${isFirst ? "bg-green-600 text-white" : isLast ? "bg-red-600 text-white" : "bg-blue-600 text-white"}`}
                             style={{
                               lineHeight: 1,
                               marginLeft: "-39px",
@@ -375,7 +377,6 @@ export default function RouteUrlFetcher() {
                               position: "relative",
                             }}
                           >
-                            {/* <ArrowDownIcon className="h-3 w-3" /> */}
                             {idx + 1}
                           </span>
 
@@ -397,17 +398,16 @@ export default function RouteUrlFetcher() {
                             variant="secondary"
                             className={`px-4 py-0 rounded-full text-xs font-bold flex items-center justify-center
                 transition-all duration-200 ease-in-out group
-               ${
-                 isFirst
-                   ? "bg-green-100 hover:bg-green-200 hover:shadow-md hover:-translate-y-0.5"
-                   : isLast
-                   ? "bg-red-100 hover:bg-red-200 hover:shadow-md hover:-translate-y-0.5"
-                   : "bg-blue-100 hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5"
-               }
-`}
+                ${
+                  isFirst
+                    ? "bg-green-100 hover:bg-green-200 hover:shadow-md hover:-translate-y-0.5"
+                    : isLast
+                    ? "bg-red-100 hover:bg-red-200 hover:shadow-md hover:-translate-y-0.5"
+                    : "bg-blue-100 hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5"
+                }`}
                             style={{ minHeight: "28px", lineHeight: "28px" }}
                           >
-                            <span>{arr[idx].name}</span>
+                            <span>{point.name}</span>
                           </Badge>
                         </div>
                       );
