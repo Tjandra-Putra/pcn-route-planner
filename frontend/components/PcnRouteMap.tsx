@@ -252,15 +252,16 @@ export default function RouteUrlFetcher() {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-white">
+    <div className="flex flex-col md:flex-row h-screen w-screen bg-white">
       {/* Top loading bar */}
       <LoadingBar color="#2563eb" ref={loadingBarRef} height={4} />
 
       {/* Collapsible sidebar */}
       <div
-        className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out ${
-          collapsed ? "w-13" : "w-1/3 max-w-md"
-        } overflow-hidden`}
+        className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out
+          ${collapsed ? "w-16 md:w-16" : "w-full md:w-1/3 md:max-w-md"}
+          overflow-hidden
+        `}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
           <button
@@ -282,65 +283,63 @@ export default function RouteUrlFetcher() {
 
         {!collapsed && (
           <Card className="flex-1 flex flex-col border-none outline-none border-r-0 rounded-none !shadow-none">
-            <CardContent className="flex-grow overflow-auto">
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="origin" className="mb-1 block text-sm font-medium text-gray-700">
-                    Current Location
-                  </Label>
-                  {isLoaded ? (
-                    <Autocomplete onLoad={onLoadOrigin} onPlaceChanged={onPlaceChangedOrigin}>
-                      <Input
-                        id="origin"
-                        type="text"
-                        value={originInput}
-                        onChange={(e) => setOriginInput(e.target.value)}
-                        placeholder="e.g. 310172"
-                        autoComplete="off"
-                        className="bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </Autocomplete>
-                  ) : (
+            <CardContent className="flex-grow overflow-auto space-y-6 px-4 py-3 md:px-6 md:py-4">
+              <div>
+                <Label htmlFor="origin" className="mb-1 block text-sm font-medium text-gray-700">
+                  Current Location
+                </Label>
+                {isLoaded ? (
+                  <Autocomplete onLoad={onLoadOrigin} onPlaceChanged={onPlaceChangedOrigin}>
                     <Input
                       id="origin"
                       type="text"
                       value={originInput}
                       onChange={(e) => setOriginInput(e.target.value)}
-                      placeholder="Loading..."
-                      disabled
-                      className="bg-gray-200"
+                      placeholder="e.g. 310172"
+                      autoComplete="off"
+                      className="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
-                  )}
-                </div>
+                  </Autocomplete>
+                ) : (
+                  <Input
+                    id="origin"
+                    type="text"
+                    value={originInput}
+                    onChange={(e) => setOriginInput(e.target.value)}
+                    placeholder="Loading..."
+                    disabled
+                    className="w-full bg-gray-200"
+                  />
+                )}
+              </div>
 
-                <div>
-                  <Label htmlFor="destination" className="mb-1 block text-sm font-medium text-gray-700">
-                    Destination
-                  </Label>
-                  {isLoaded ? (
-                    <Autocomplete onLoad={onLoadDestination} onPlaceChanged={onPlaceChangedDestination}>
-                      <Input
-                        id="destination"
-                        type="text"
-                        value={destinationInput}
-                        onChange={(e) => setDestinationInput(e.target.value)}
-                        placeholder="e.g. East Coast Park"
-                        autoComplete="off"
-                        className="bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </Autocomplete>
-                  ) : (
+              <div>
+                <Label htmlFor="destination" className="mb-1 block text-sm font-medium text-gray-700">
+                  Destination
+                </Label>
+                {isLoaded ? (
+                  <Autocomplete onLoad={onLoadDestination} onPlaceChanged={onPlaceChangedDestination}>
                     <Input
                       id="destination"
                       type="text"
                       value={destinationInput}
                       onChange={(e) => setDestinationInput(e.target.value)}
-                      placeholder="Loading..."
-                      disabled
-                      className="bg-gray-200"
+                      placeholder="e.g. East Coast Park"
+                      autoComplete="off"
+                      className="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
-                  )}
-                </div>
+                  </Autocomplete>
+                ) : (
+                  <Input
+                    id="destination"
+                    type="text"
+                    value={destinationInput}
+                    onChange={(e) => setDestinationInput(e.target.value)}
+                    placeholder="Loading..."
+                    disabled
+                    className="w-full bg-gray-200"
+                  />
+                )}
               </div>
 
               <h2 className="text-sm font-semibold text-center tracking-wide mt-6 mb-4">
@@ -351,45 +350,44 @@ export default function RouteUrlFetcher() {
                   </span>
                 )}
               </h2>
-              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
-                <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
-                  {routeDetails ? (
-                    <>
-                      {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
-                        if (idx === arr.length - 1) return null;
 
-                        return (
-                          <Badge
-                            key={idx}
-                            variant="secondary"
-                            className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2
+              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
+                {routeDetails ? (
+                  <>
+                    {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
+                      if (idx === arr.length - 1) return null;
+
+                      return (
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2
                hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5
                transition-all duration-200 ease-in-out group"
-                          >
-                            <span
-                              className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold
+                        >
+                          <span
+                            className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold
                  transition-transform duration-200 ease-in-out group-hover:scale-110"
-                            >
-                              {idx + 1}
-                            </span>
+                          >
+                            {idx + 1}
+                          </span>
 
-                            <span>{arr[idx].name}</span>
+                          <span>{arr[idx].name}</span>
 
-                            <ArrowRightIcon className="h-4 w-4" />
-                          </Badge>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <p className="text-center text-gray-400 italic mt-4">
-                      No route details available. Please enter origin and destination and click Get Route.
-                    </p>
-                  )}
-                </div>
+                          <ArrowRightIcon className="h-4 w-4" />
+                        </Badge>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <p className="text-center text-gray-400 italic mt-4">
+                    No route details available. Please enter origin and destination and click Get Route.
+                  </p>
+                )}
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col items-center gap-3">
+            <CardFooter className="flex flex-col items-center gap-3 px-4 py-3 md:px-6 md:py-4">
               {mapsUrl && (
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-center break-words w-full">
                   <Button variant="outline" className="w-full cursor-pointer">
@@ -427,7 +425,8 @@ export default function RouteUrlFetcher() {
         )}
       </div>
 
-      <div className="flex-1 relative">
+      {/* Map container */}
+      <div className="flex-1 relative h-[50vh] md:h-full">
         {isLoaded ? (
           <>
             <div
