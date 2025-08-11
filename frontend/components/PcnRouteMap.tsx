@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
-import { Badge } from "@/components/ui/badge"; // Adjust import according to your setup
+import { Badge } from "@/components/ui/badge";
 
 import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete, BicyclingLayer } from "@react-google-maps/api";
 
@@ -51,6 +51,62 @@ export default function RouteUrlFetcher() {
   const originAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const destinationAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
+  // Geocoder instance ref
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+
+  // Initialize Geocoder after Google Maps API is loaded
+  useEffect(() => {
+    if (isLoaded && !geocoderRef.current && window.google) {
+      geocoderRef.current = new window.google.maps.Geocoder();
+    }
+  }, [isLoaded]);
+
+  // Reverse geocode lat,lng to formatted address string
+  function reverseGeocodeLatLng(lat: number, lng: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      if (!geocoderRef.current) {
+        resolve(null);
+        return;
+      }
+      geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          resolve(results[0].formatted_address);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  // On component mount, request user location and prefill originInput
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation is not supported by this browser.");
+      return;
+    }
+    if (!isLoaded) return; // wait for Google Maps API to load
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const address = await reverseGeocodeLatLng(latitude, longitude);
+        if (address) {
+          setOriginInput(address);
+        } else {
+          setOriginInput(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        }
+      },
+      (error) => {
+        console.warn("User denied location or error getting location", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, [isLoaded]);
+
   function onLoadOrigin(autocomplete: google.maps.places.Autocomplete) {
     originAutocompleteRef.current = autocomplete;
   }
@@ -62,17 +118,15 @@ export default function RouteUrlFetcher() {
   function onPlaceChangedOrigin() {
     if (originAutocompleteRef.current) {
       const place = originAutocompleteRef.current.getPlace();
-      if (!place) return; // guard against undefined
+      if (!place) return;
 
       if (place.formatted_address) {
         setOriginInput(place.formatted_address);
       } else if (place.name) {
         setOriginInput(place.name);
       } else if (typeof place === "string") {
-        // Sometimes getPlace() may return a string if user typed free text
         setOriginInput(place);
       }
-      // else fallback do nothing or keep current input
     }
   }
 
@@ -119,7 +173,6 @@ export default function RouteUrlFetcher() {
     setMapsUrl(null);
     setRouteDetails(null);
 
-    // Start loading bar
     loadingBarRef.current?.continuousStart();
 
     try {
@@ -169,7 +222,6 @@ export default function RouteUrlFetcher() {
       setRouteDetails(fullRoute);
       setMapsUrl(res.data.mapsUrl || null);
 
-      // Complete loading bar
       loadingBarRef.current?.complete();
     } catch (err: any) {
       console.error(err);
@@ -296,7 +348,7 @@ export default function RouteUrlFetcher() {
                   {routeDetails ? (
                     <>
                       {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
-                        if (idx === arr.length - 1) return null; // no next point to pair with
+                        if (idx === arr.length - 1) return null;
 
                         return (
                           <Badge
@@ -341,7 +393,6 @@ export default function RouteUrlFetcher() {
               {routeDetails ? (
                 <Button
                   onClick={() => {
-                    // Reset all inputs and route info
                     setOriginInput("");
                     setDestinationInput("");
                     setRouteDetails(null);
