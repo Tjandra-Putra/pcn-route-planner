@@ -26,6 +26,17 @@ type RouteData = {
   Destination: RoutePoint;
 };
 
+// Helper function to create numbered marker SVG icon
+function getNumberedMarkerIcon(number: number, color = "#2563eb") {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40" >
+      <path fill="${color}" d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z"/>
+      <text x="16" y="22" font-size="16" fill="white" font-weight="bold" text-anchor="middle" font-family="Arial" dominant-baseline="middle">${number}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 export default function RouteUrlFetcher() {
   const [originInput, setOriginInput] = useState("");
   const [destinationInput, setDestinationInput] = useState("");
@@ -44,24 +55,17 @@ export default function RouteUrlFetcher() {
     libraries: ["places"],
   });
 
-  const startIcon = "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
-  const stopIcon = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
-  const destinationIcon = "http://maps.google.com/mapfiles/ms/icons/red-dot.png";
-
   const originAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const destinationAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
-  // Geocoder instance ref
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
-  // Initialize Geocoder after Google Maps API is loaded
   useEffect(() => {
     if (isLoaded && !geocoderRef.current && window.google) {
       geocoderRef.current = new window.google.maps.Geocoder();
     }
   }, [isLoaded]);
 
-  // Reverse geocode lat,lng to formatted address string
   function reverseGeocodeLatLng(lat: number, lng: number): Promise<string | null> {
     return new Promise((resolve) => {
       if (!geocoderRef.current) {
@@ -78,13 +82,12 @@ export default function RouteUrlFetcher() {
     });
   }
 
-  // On component mount, request user location and prefill originInput
   useEffect(() => {
     if (!navigator.geolocation) {
       console.warn("Geolocation is not supported by this browser.");
       return;
     }
-    if (!isLoaded) return; // wait for Google Maps API to load
+    if (!isLoaded) return;
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -360,15 +363,11 @@ export default function RouteUrlFetcher() {
                       const isLast = idx === arr.length - 2;
 
                       return (
-                        <div
-                          key={idx}
-                          className="flex items-center space-x-3 pl-10 relative"
-                          style={{ minHeight: "52px" }} // Make sure container is tall enough for line
-                        >
+                        <div key={idx} className="flex items-center space-x-3 pl-10 relative" style={{ minHeight: "52px" }}>
                           {/* Arrow circle */}
                           <span
                             className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold
-                ${isFirst || isLast ? "bg-gray-600 text-white" : "bg-blue-600 text-white"}`}
+    ${isFirst ? "bg-green-600 text-white" : isLast ? "bg-red-600 text-white" : "bg-blue-600 text-white"}`}
                             style={{
                               lineHeight: 1,
                               marginLeft: "-39px",
@@ -376,7 +375,8 @@ export default function RouteUrlFetcher() {
                               position: "relative",
                             }}
                           >
-                            <ArrowDownIcon className="h-3 w-3" />
+                            {/* <ArrowDownIcon className="h-3 w-3" /> */}
+                            {idx + 1}
                           </span>
 
                           {/* Vertical dotted line segment below arrow (except last) */}
@@ -384,9 +384,9 @@ export default function RouteUrlFetcher() {
                             <span
                               className="absolute border-l-2 border-dotted border-blue-300"
                               style={{
-                                height: "calc(100% - 24px)", // stretch line from below arrow to bottom of container
-                                top: "47px", // arrow height (24px) + some gap, adjust if arrow size changes
-                                left: "12px", // aligns dotted line near arrow center, adjust if needed
+                                height: "calc(100% - 24px)",
+                                top: "47px",
+                                left: "12px",
                                 zIndex: 1,
                               }}
                             />
@@ -397,11 +397,14 @@ export default function RouteUrlFetcher() {
                             variant="secondary"
                             className={`px-4 py-0 rounded-full text-xs font-bold flex items-center justify-center
                 transition-all duration-200 ease-in-out group
-                ${
-                  isFirst || isLast
-                    ? "bg-gray-100 hover:bg-gray-200 hover:shadow-md hover:-translate-y-0.5"
-                    : "bg-blue-100 hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5"
-                }`}
+               ${
+                 isFirst
+                   ? "bg-green-100 hover:bg-green-200 hover:shadow-md hover:-translate-y-0.5"
+                   : isLast
+                   ? "bg-red-100 hover:bg-red-200 hover:shadow-md hover:-translate-y-0.5"
+                   : "bg-blue-100 hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5"
+               }
+`}
                             style={{ minHeight: "28px", lineHeight: "28px" }}
                           >
                             <span>{arr[idx].name}</span>
@@ -486,11 +489,29 @@ export default function RouteUrlFetcher() {
             >
               {routeDetails && (
                 <>
-                  <Marker position={routeDetails.Start_Point} title="Start" icon={startIcon} />
+                  {/* Start marker is number 1 */}
+                  <Marker
+                    position={routeDetails.Start_Point}
+                    title={`1: ${routeDetails.Start_Point.name}`}
+                    icon={getNumberedMarkerIcon(1, "#22c55e")} // green
+                  />
+
+                  {/* Intermediate stops start numbering from 2 */}
                   {routeDetails.Route.map((stop, idx) => (
-                    <Marker key={idx} position={stop} title={stop.name} icon={stopIcon} />
+                    <Marker
+                      key={idx}
+                      position={stop}
+                      title={`${idx + 2}: ${stop.name}`}
+                      icon={getNumberedMarkerIcon(idx + 2, "#3b82f6")} // blue
+                    />
                   ))}
-                  <Marker position={routeDetails.Destination} title="Destination" icon={destinationIcon} />
+
+                  {/* Destination marker number is last */}
+                  <Marker
+                    position={routeDetails.Destination}
+                    title={`${routeDetails.Route.length + 2}: ${routeDetails.Destination.name}`}
+                    icon={getNumberedMarkerIcon(routeDetails.Route.length + 2, "#ef4444")} // red
+                  />
 
                   <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
                   <BicyclingLayer />
