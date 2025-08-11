@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 
 import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete, BicyclingLayer } from "@react-google-maps/api";
@@ -369,12 +369,10 @@ export default function RouteUrlFetcher() {
                             className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold
                  transition-transform duration-200 ease-in-out group-hover:scale-110"
                           >
-                            {idx + 1}
+                            <ArrowDownIcon className="h-3 w-3" />
                           </span>
 
                           <span>{arr[idx].name}</span>
-
-                          <ArrowRightIcon className="h-4 w-4" />
                         </Badge>
                       );
                     })}
