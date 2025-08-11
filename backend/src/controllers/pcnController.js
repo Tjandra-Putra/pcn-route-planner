@@ -18,6 +18,8 @@ export const getRoute = async (req, res, next) => {
     const cleanedRoute = removeDuplicates(routeData);
     const mapsUrl = buildGoogleMapsUrl(cleanedRoute);
 
+    console.log("Cleaned Route:", cleanedRoute);
+
     if (openInBrowser) {
       const open = (await import("open")).default;
       await open(mapsUrl);
