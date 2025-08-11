@@ -350,30 +350,63 @@ export default function RouteUrlFetcher() {
                   </span>
                 )}
               </h2>
-
-              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
+              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] px-2 py-1">
                 {routeDetails ? (
                   <>
                     {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
                       if (idx === arr.length - 1) return null;
 
+                      const isFirst = idx === 0;
+                      const isLast = idx === arr.length - 2;
+
                       return (
-                        <Badge
+                        <div
                           key={idx}
-                          variant="secondary"
-                          className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2
-               hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5
-               transition-all duration-200 ease-in-out group"
+                          className="flex items-center space-x-3 pl-10 relative"
+                          style={{ minHeight: "52px" }} // Make sure container is tall enough for line
                         >
+                          {/* Arrow circle */}
                           <span
-                            className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold
-                 transition-transform duration-200 ease-in-out group-hover:scale-110"
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold
+                ${isFirst || isLast ? "bg-gray-600 text-white" : "bg-blue-600 text-white"}`}
+                            style={{
+                              lineHeight: 1,
+                              marginLeft: "-39px",
+                              zIndex: 10,
+                              position: "relative",
+                            }}
                           >
                             <ArrowDownIcon className="h-3 w-3" />
                           </span>
 
-                          <span>{arr[idx].name}</span>
-                        </Badge>
+                          {/* Vertical dotted line segment below arrow (except last) */}
+                          {!isLast && (
+                            <span
+                              className="absolute border-l-2 border-dotted border-blue-300"
+                              style={{
+                                height: "calc(100% - 24px)", // stretch line from below arrow to bottom of container
+                                top: "47px", // arrow height (24px) + some gap, adjust if arrow size changes
+                                left: "12px", // aligns dotted line near arrow center, adjust if needed
+                                zIndex: 1,
+                              }}
+                            />
+                          )}
+
+                          {/* Badge */}
+                          <Badge
+                            variant="secondary"
+                            className={`px-4 py-0 rounded-full text-xs font-bold flex items-center justify-center
+                transition-all duration-200 ease-in-out group
+                ${
+                  isFirst || isLast
+                    ? "bg-gray-100 hover:bg-gray-200 hover:shadow-md hover:-translate-y-0.5"
+                    : "bg-blue-100 hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5"
+                }`}
+                            style={{ minHeight: "28px", lineHeight: "28px" }}
+                          >
+                            <span>{arr[idx].name}</span>
+                          </Badge>
+                        </div>
                       );
                     })}
                   </>
