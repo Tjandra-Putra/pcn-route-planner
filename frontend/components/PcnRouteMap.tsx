@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge"; // Adjust import according to your setup
 
-import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete, BicyclingLayer } from "@react-google-maps/api";
 
 import LoadingBar from "react-top-loading-bar";
 
@@ -44,6 +44,10 @@ export default function RouteUrlFetcher() {
     libraries: ["places"],
   });
 
+  const startIcon = "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
+  const stopIcon = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
+  const destinationIcon = "http://maps.google.com/mapfiles/ms/icons/red-dot.png";
+
   const originAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const destinationAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
@@ -58,21 +62,31 @@ export default function RouteUrlFetcher() {
   function onPlaceChangedOrigin() {
     if (originAutocompleteRef.current) {
       const place = originAutocompleteRef.current.getPlace();
+      if (!place) return; // guard against undefined
+
       if (place.formatted_address) {
         setOriginInput(place.formatted_address);
       } else if (place.name) {
         setOriginInput(place.name);
+      } else if (typeof place === "string") {
+        // Sometimes getPlace() may return a string if user typed free text
+        setOriginInput(place);
       }
+      // else fallback do nothing or keep current input
     }
   }
 
   function onPlaceChangedDestination() {
     if (destinationAutocompleteRef.current) {
       const place = destinationAutocompleteRef.current.getPlace();
+      if (!place) return;
+
       if (place.formatted_address) {
         setDestinationInput(place.formatted_address);
       } else if (place.name) {
         setDestinationInput(place.name);
+      } else if (typeof place === "string") {
+        setDestinationInput(place);
       }
     }
   }
@@ -290,9 +304,12 @@ export default function RouteUrlFetcher() {
                             variant="secondary"
                             className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2
                hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5
-               transition-all duration-200 ease-in-out"
+               transition-all duration-200 ease-in-out group"
                           >
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold">
+                            <span
+                              className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold
+                 transition-transform duration-200 ease-in-out group-hover:scale-110"
+                            >
                               {idx + 1}
                             </span>
 
@@ -380,12 +397,14 @@ export default function RouteUrlFetcher() {
             >
               {routeDetails && (
                 <>
-                  <Marker position={{ lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng }} title={routeDetails.Start_Point.name} />
+                  <Marker position={routeDetails.Start_Point} title="Start" icon={startIcon} />
                   {routeDetails.Route.map((stop, idx) => (
-                    <Marker key={idx} position={{ lat: stop.lat, lng: stop.lng }} title={stop.name} />
+                    <Marker key={idx} position={stop} title={stop.name} icon={stopIcon} />
                   ))}
-                  <Marker position={{ lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng }} title={routeDetails.Destination.name} />
+                  <Marker position={routeDetails.Destination} title="Destination" icon={destinationIcon} />
+
                   <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
+                  <BicyclingLayer />
                 </>
               )}
             </GoogleMap>
