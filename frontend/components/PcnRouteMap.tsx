@@ -259,7 +259,7 @@ export default function RouteUrlFetcher() {
       {/* Collapsible sidebar */}
       <div
         className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out ${
-          collapsed ? "w-16" : "w-1/3 max-w-md"
+          collapsed ? "w-13" : "w-1/3 max-w-md"
         } overflow-hidden`}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
@@ -272,9 +272,12 @@ export default function RouteUrlFetcher() {
             {collapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
           </button>
 
-          <h1 className="text-base font-semibold tracking-tight text-gray-900 ml-3">PCN AI Route Assistant</h1>
-
-          <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-1" />
+          {!collapsed && (
+            <>
+              <h1 className="text-base font-semibold tracking-tight text-gray-900 ml-3">PCN AI Route Assistant</h1>
+              <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-1" />
+            </>
+          )}
         </div>
 
         {!collapsed && (
