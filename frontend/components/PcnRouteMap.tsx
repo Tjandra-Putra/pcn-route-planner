@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+import { Badge } from "@/components/ui/badge"; // Adjust import according to your setup
 
 import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 
@@ -187,7 +188,7 @@ export default function RouteUrlFetcher() {
       {/* Collapsible sidebar */}
       <div
         className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out ${
-          collapsed ? "w-16" : "w-1/3 max-w-xs"
+          collapsed ? "w-16" : "w-1/3 max-w-md"
         } overflow-hidden`}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
@@ -269,20 +270,31 @@ export default function RouteUrlFetcher() {
               </div>
 
               <h2 className="font-semibold text-center tracking-wide mt-6 mb-4 ">Route Details</h2>
-              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh]">
+              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
                 {routeDetails && (
                   <>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>
-                        <strong>Start Point:</strong> {routeDetails.Start_Point.name}
-                      </li>
-                      {routeDetails.Route.map((stop, idx) => (
-                        <li key={idx}>{stop.name}</li>
-                      ))}
-                      <li>
-                        <strong>Destination:</strong> {routeDetails.Destination.name}
-                      </li>
-                    </ul>
+                    {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
+                      if (idx === arr.length - 1) return null; // no next point to pair with
+
+                      return (
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2"
+                        >
+                          {/* Number circle */}
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold">
+                            {idx + 1}
+                          </span>
+
+                          {/* Name */}
+                          <span>{arr[idx].name}</span>
+
+                          {/* Arrow */}
+                          <ArrowRightIcon className="h-4 w-4" />
+                        </Badge>
+                      );
+                    })}
                   </>
                 )}
               </div>
