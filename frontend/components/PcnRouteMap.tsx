@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete, BicyclingLayer } from "@react-google-maps/api";
 
-import LoadingBar from "react-top-loading-bar";
+import LoadingBar, { LoadingBarRef } from "react-top-loading-bar";
 
 type RoutePoint = {
   name: string;
@@ -35,7 +35,7 @@ export default function RouteUrlFetcher() {
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
-  const loadingBarRef = useRef<LoadingBar>(null);
+  const loadingBarRef = useRef<LoadingBarRef>(null);
 
   const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
@@ -223,9 +223,14 @@ export default function RouteUrlFetcher() {
       setMapsUrl(res.data.mapsUrl || null);
 
       loadingBarRef.current?.complete();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to fetch route or geocode locations.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err);
+        setError(err.message || "Failed to fetch route or geocode locations.");
+      } else {
+        console.error("Unknown error", err);
+        setError("Failed to fetch route or geocode locations.");
+      }
       loadingBarRef.current?.complete();
     } finally {
       setLoading(false);
