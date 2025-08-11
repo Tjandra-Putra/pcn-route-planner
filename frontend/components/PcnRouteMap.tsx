@@ -1,116 +1,338 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+
+import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+
+type RoutePoint = {
+  name: string;
+  lat: number;
+  lng: number;
+};
+
+type RouteData = {
+  Start_Point: RoutePoint;
+  Route: RoutePoint[];
+  Destination: RoutePoint;
+};
 
 export default function RouteUrlFetcher() {
   const [originInput, setOriginInput] = useState("");
   const [destinationInput, setDestinationInput] = useState("");
   const [mapsUrl, setMapsUrl] = useState<string | null>(null);
-  const [routeDetails, setRouteDetails] = useState<null | {
-    Start_Point: { name: string };
-    Route: { name: string }[];
-    Destination: { name: string };
-  }>(null);
+  const [routeDetails, setRouteDetails] = useState<RouteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: ["places"],
+  });
+
+  // Refs for Autocomplete instances
+  const originAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const destinationAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  function onLoadOrigin(autocomplete: google.maps.places.Autocomplete) {
+    originAutocompleteRef.current = autocomplete;
+  }
+
+  function onLoadDestination(autocomplete: google.maps.places.Autocomplete) {
+    destinationAutocompleteRef.current = autocomplete;
+  }
+
+  function onPlaceChangedOrigin() {
+    if (originAutocompleteRef.current) {
+      const place = originAutocompleteRef.current.getPlace();
+      if (place.formatted_address) {
+        setOriginInput(place.formatted_address);
+      } else if (place.name) {
+        setOriginInput(place.name);
+      }
+    }
+  }
+
+  function onPlaceChangedDestination() {
+    if (destinationAutocompleteRef.current) {
+      const place = destinationAutocompleteRef.current.getPlace();
+      if (place.formatted_address) {
+        setDestinationInput(place.formatted_address);
+      } else if (place.name) {
+        setDestinationInput(place.name);
+      }
+    }
+  }
+
+  async function geocodePlaceName(placeName: string): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
+        params: {
+          address: placeName,
+          key: GOOGLE_MAPS_API_KEY,
+        },
+      });
+
+      const results = response.data.results;
+      if (!results || results.length === 0) {
+        console.warn(`No geocoding results for "${placeName}"`);
+        return null; // Return null instead of throwing
+      }
+
+      return results[0].geometry.location;
+    } catch (error) {
+      console.error(`Geocoding error for "${placeName}":`, error);
+      return null;
+    }
+  }
 
   async function fetchRoute() {
     setLoading(true);
     setError(null);
     setMapsUrl(null);
     setRouteDetails(null);
+
     try {
       const res = await axios.post("http://localhost:5001/api/pcn/route", {
         current_location: originInput,
         destination_location: destinationInput,
       });
 
-      setMapsUrl(res.data.mapsUrl);
-      setRouteDetails(res.data.route);
-    } catch (err) {
+      const rawRoute = res.data.route;
+
+      const startCoords = await geocodePlaceName(rawRoute.Start_Point.name);
+      if (!startCoords) throw new Error(`No geocoding results for start point "${rawRoute.Start_Point.name}"`);
+
+      const destinationCoords = await geocodePlaceName(rawRoute.Destination.name);
+      if (!destinationCoords) throw new Error(`No geocoding results for destination "${rawRoute.Destination.name}"`);
+
+      const routePoints: RoutePoint[] = [];
+      for (const stop of rawRoute.Route) {
+        const coords = await geocodePlaceName(stop.name);
+        if (!coords) {
+          console.warn(`Skipping route stop "${stop.name}" due to no geocoding results.`);
+          continue; // skip this stop if no coords
+        }
+        routePoints.push({
+          name: stop.name,
+          lat: coords.lat,
+          lng: coords.lng,
+        });
+      }
+
+      const fullRoute: RouteData = {
+        Start_Point: {
+          name: rawRoute.Start_Point.name,
+          lat: startCoords.lat,
+          lng: startCoords.lng,
+        },
+        Route: routePoints,
+        Destination: {
+          name: rawRoute.Destination.name,
+          lat: destinationCoords.lat,
+          lng: destinationCoords.lng,
+        },
+      };
+
+      setRouteDetails(fullRoute);
+      setMapsUrl(res.data.mapsUrl || null);
+    } catch (err: any) {
       console.error(err);
-      setError("Failed to fetch route URL. Please try again.");
+      setError(err.message || "Failed to fetch route or geocode locations.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  }
+
+  const center = routeDetails ? { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng } : { lat: 1.3521, lng: 103.8198 }; // Singapore default
+
+  const path = routeDetails
+    ? [
+        { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng },
+        ...routeDetails.Route.map((p) => ({ lat: p.lat, lng: p.lng })),
+        { lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng },
+      ]
+    : [];
+
+  if (loadError) {
+    return <div>Error loading Google Maps</div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 px-4 py-10">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardContent>
-          <h1 className="text-2xl font-semibold mb-6 text-center">PCN Route URL Generator</h1>
+    <div className="flex h-screen w-screen">
+      {/* Collapsible sidebar */}
+      <div
+        className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out ${
+          collapsed ? "w-16" : "w-1/3 max-w-xs"
+        } overflow-hidden`}
+      >
+        {/* Toggle button */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-2 hover:bg-gray-100 focus:outline-none"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
+          </button>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="origin" className="mb-1 block text-sm font-medium">
-                Current Location
-              </Label>
-              <Input
-                id="origin"
-                type="text"
-                value={originInput}
-                onChange={(e) => setOriginInput(e.target.value)}
-                placeholder="e.g. 310172"
-                autoComplete="off"
-              />
-            </div>
+          <h1 className="text-sm font-semibold tracking-tight text-gray-900 ml-3">PCN Route URL Generator</h1>
 
-            <div>
-              <Label htmlFor="destination" className="mb-1 block text-sm font-medium">
-                Destination
-              </Label>
-              <Input
-                id="destination"
-                type="text"
-                value={destinationInput}
-                onChange={(e) => setDestinationInput(e.target.value)}
-                placeholder="e.g. West Coast Park"
-                autoComplete="off"
-              />
-            </div>
-          </div>
-        </CardContent>
+          <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-1" />
+        </div>
 
-        <CardFooter className="flex flex-col items-center gap-2">
-          <Button onClick={fetchRoute} disabled={loading || !originInput || !destinationInput} className="w-full">
-            {loading ? "Loading..." : "Get Route URL"}
-          </Button>
+        {/* Content only visible if not collapsed */}
+        {!collapsed && (
+          <Card className="flex-1 flex flex-col border-none outline-none shadow-lg">
+            <CardContent className="flex-grow overflow-auto">
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="origin" className="mb-1 block text-sm font-medium text-gray-700">
+                    Current Location
+                  </Label>
+                  {isLoaded ? (
+                    <Autocomplete onLoad={onLoadOrigin} onPlaceChanged={onPlaceChangedOrigin}>
+                      <Input
+                        id="origin"
+                        type="text"
+                        value={originInput}
+                        onChange={(e) => setOriginInput(e.target.value)}
+                        placeholder="e.g. 310172"
+                        autoComplete="off"
+                        className="bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </Autocomplete>
+                  ) : (
+                    <Input
+                      id="origin"
+                      type="text"
+                      value={originInput}
+                      onChange={(e) => setOriginInput(e.target.value)}
+                      placeholder="Loading..."
+                      disabled
+                      className="bg-gray-200"
+                    />
+                  )}
+                </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+                <div>
+                  <Label htmlFor="destination" className="mb-1 block text-sm font-medium text-gray-700">
+                    Destination
+                  </Label>
+                  {isLoaded ? (
+                    <Autocomplete onLoad={onLoadDestination} onPlaceChanged={onPlaceChangedDestination}>
+                      <Input
+                        id="destination"
+                        type="text"
+                        value={destinationInput}
+                        onChange={(e) => setDestinationInput(e.target.value)}
+                        placeholder="e.g. East Coast Park"
+                        autoComplete="off"
+                        className="bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </Autocomplete>
+                  ) : (
+                    <Input
+                      id="destination"
+                      type="text"
+                      value={destinationInput}
+                      onChange={(e) => setDestinationInput(e.target.value)}
+                      placeholder="Loading..."
+                      disabled
+                      className="bg-gray-200"
+                    />
+                  )}
+                </div>
+              </div>
 
-          {mapsUrl && (
-            <>
-              <Separator className="my-4 w-full" />
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-center break-words w-full">
-                Open Route in Google Maps
-              </a>
-            </>
-          )}
+              {routeDetails && (
+                <div className="mt-6 w-full text-sm text-gray-700 overflow-auto max-h-64">
+                  <h2 className="font-semibold mb-3 text-center tracking-wide">Route Details</h2>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>
+                      <strong>Start Point:</strong> {routeDetails.Start_Point.name}
+                    </li>
+                    {routeDetails.Route.map((stop, idx) => (
+                      <li key={idx}>{stop.name}</li>
+                    ))}
+                    <li>
+                      <strong>Destination:</strong> {routeDetails.Destination.name}
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </CardContent>
 
-          {routeDetails && (
-            <div className="mt-6 w-full text-sm text-gray-700">
-              <h2 className="font-semibold mb-2 text-center">Route Details</h2>
-              <ul className="list-disc list-inside space-y-1">
-                <li>
-                  <strong>Start Point:</strong> {routeDetails.Start_Point.name}
-                </li>
+            <CardFooter className="flex flex-col items-center gap-3">
+              {mapsUrl && (
+                <>
+                  <Separator className="my-4 w-full border-gray-300" />
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline text-center break-words w-full"
+                  >
+                    <Button variant="outline" className="w-full cursor-pointer">
+                      Open Route in Google Maps
+                    </Button>
+                  </a>
+                </>
+              )}
+
+              <Button
+                onClick={fetchRoute}
+                disabled={loading || !originInput || !destinationInput}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer"
+              >
+                {loading ? "Loading..." : "Get Route"}
+              </Button>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </CardFooter>
+          </Card>
+        )}
+      </div>
+
+      {/* Map area */}
+      <div className="flex-1">
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={center}
+            zoom={13}
+            options={{
+              fullscreenControl: false,
+              zoomControl: false,
+              mapTypeControl: false,
+              streetViewControl: false,
+            }}
+          >
+            {routeDetails && (
+              <>
+                <Marker position={{ lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng }} title={routeDetails.Start_Point.name} />
                 {routeDetails.Route.map((stop, idx) => (
-                  <li key={idx}>{stop.name}</li>
+                  <Marker key={idx} position={{ lat: stop.lat, lng: stop.lng }} title={stop.name} />
                 ))}
-                <li>
-                  <strong>Destination:</strong> {routeDetails.Destination.name}
-                </li>
-              </ul>
-            </div>
-          )}
-        </CardFooter>
-      </Card>
+                <Marker position={{ lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng }} title={routeDetails.Destination.name} />
+                <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
+              </>
+            )}
+          </GoogleMap>
+        ) : (
+          <div>Loading Map...</div>
+        )}
+      </div>
     </div>
   );
 }
