@@ -258,10 +258,10 @@ export default function RouteUrlFetcher() {
 
       {/* Collapsible sidebar */}
       <div
-        className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out
-          ${collapsed ? "w-16 md:w-16" : "w-full md:w-1/3 md:max-w-md"}
-          overflow-hidden
-        `}
+        className={`flex flex-col transition-width duration-300 ease-in-out overflow-hidden
+    ${collapsed ? "w-13 shadow-none md:shadow-lg" : "w-full md:w-1/3 md:max-w-md shadow-lg"}
+    bg-white
+  `}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
           <button
