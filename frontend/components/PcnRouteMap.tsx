@@ -271,32 +271,35 @@ export default function RouteUrlFetcher() {
 
               <h2 className="font-semibold text-center tracking-wide mt-6 mb-4 ">Route Details</h2>
               <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
-                {routeDetails && (
-                  <>
-                    {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
-                      if (idx === arr.length - 1) return null; // no next point to pair with
+                <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
+                  {routeDetails ? (
+                    <>
+                      {[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].map((point, idx, arr) => {
+                        if (idx === arr.length - 1) return null; // no next point to pair with
 
-                      return (
-                        <Badge
-                          key={idx}
-                          variant="secondary"
-                          className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2"
-                        >
-                          {/* Number circle */}
-                          <span className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold">
-                            {idx + 1}
-                          </span>
+                        return (
+                          <Badge
+                            key={idx}
+                            variant="secondary"
+                            className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2"
+                          >
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold">
+                              {idx + 1}
+                            </span>
 
-                          {/* Name */}
-                          <span>{arr[idx].name}</span>
+                            <span>{arr[idx].name}</span>
 
-                          {/* Arrow */}
-                          <ArrowRightIcon className="h-4 w-4" />
-                        </Badge>
-                      );
-                    })}
-                  </>
-                )}
+                            <ArrowRightIcon className="h-4 w-4" />
+                          </Badge>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <p className="text-center text-gray-400 italic mt-4">
+                      No route details available. Please enter origin and destination and click Get Route.
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
 
