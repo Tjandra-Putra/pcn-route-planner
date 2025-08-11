@@ -201,7 +201,7 @@ export default function RouteUrlFetcher() {
             {collapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
           </button>
 
-          <h1 className="text-sm font-semibold tracking-tight text-gray-900 ml-3">PCN AI Route Assistant</h1>
+          <h1 className="text-base font-semibold tracking-tight text-gray-900 ml-3">PCN AI Route Assistant</h1>
 
           <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-1" />
         </div>
@@ -269,7 +269,14 @@ export default function RouteUrlFetcher() {
                 </div>
               </div>
 
-              <h2 className="font-semibold text-center tracking-wide mt-6 mb-4 ">Route Details</h2>
+              <h2 className="text-sm font-semibold text-center tracking-wide mt-6 mb-4">
+                Route Details{" "}
+                {routeDetails && (
+                  <span className="text-gray-500 font-normal">
+                    ({[routeDetails.Start_Point, ...routeDetails.Route, routeDetails.Destination].length - 1} Routes)
+                  </span>
+                )}
+              </h2>
               <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
                 <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh] flex flex-col gap-2 px-2 py-1">
                   {routeDetails ? (
@@ -281,7 +288,9 @@ export default function RouteUrlFetcher() {
                           <Badge
                             key={idx}
                             variant="secondary"
-                            className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2"
+                            className="px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center bg-blue-100 space-x-2
+               hover:bg-blue-200 hover:shadow-md hover:-translate-y-0.5
+               transition-all duration-200 ease-in-out"
                           >
                             <span className="inline-flex items-center justify-center w-5 h-5 text-white bg-blue-600 rounded-full text-[10px] font-semibold">
                               {idx + 1}
@@ -312,13 +321,29 @@ export default function RouteUrlFetcher() {
                 </a>
               )}
 
-              <Button
-                onClick={fetchRoute}
-                disabled={loading || !originInput || !destinationInput}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer"
-              >
-                {loading ? "Loading..." : "Get Route"}
-              </Button>
+              {routeDetails ? (
+                <Button
+                  onClick={() => {
+                    // Reset all inputs and route info
+                    setOriginInput("");
+                    setDestinationInput("");
+                    setRouteDetails(null);
+                    setMapsUrl(null);
+                    setError(null);
+                  }}
+                  className="w-full font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+                >
+                  Restart Over
+                </Button>
+              ) : (
+                <Button
+                  onClick={fetchRoute}
+                  disabled={loading || !originInput || !destinationInput}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer"
+                >
+                  {loading ? "Hang Tight, We're Fetching Your Route..." : "Get Route"}
+                </Button>
+              )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
             </CardFooter>
