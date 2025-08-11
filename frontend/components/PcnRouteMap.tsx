@@ -11,6 +11,8 @@ import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-
 
 import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 
+import LoadingBar from "react-top-loading-bar";
+
 type RoutePoint = {
   name: string;
   lat: number;
@@ -32,6 +34,8 @@ export default function RouteUrlFetcher() {
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
+  const loadingBarRef = useRef<LoadingBar>(null);
+
   const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -39,7 +43,6 @@ export default function RouteUrlFetcher() {
     libraries: ["places"],
   });
 
-  // Refs for Autocomplete instances
   const originAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const destinationAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
@@ -85,7 +88,7 @@ export default function RouteUrlFetcher() {
       const results = response.data.results;
       if (!results || results.length === 0) {
         console.warn(`No geocoding results for "${placeName}"`);
-        return null; // Return null instead of throwing
+        return null;
       }
 
       return results[0].geometry.location;
@@ -100,6 +103,9 @@ export default function RouteUrlFetcher() {
     setError(null);
     setMapsUrl(null);
     setRouteDetails(null);
+
+    // Start loading bar
+    loadingBarRef.current?.continuousStart();
 
     try {
       const res = await axios.post("http://localhost:5001/api/pcn/route", {
@@ -120,7 +126,7 @@ export default function RouteUrlFetcher() {
         const coords = await geocodePlaceName(stop.name);
         if (!coords) {
           console.warn(`Skipping route stop "${stop.name}" due to no geocoding results.`);
-          continue; // skip this stop if no coords
+          continue;
         }
         routePoints.push({
           name: stop.name,
@@ -129,13 +135,15 @@ export default function RouteUrlFetcher() {
         });
       }
 
+      const validRoutePoints = routePoints.filter((p) => p.lat && p.lng);
+
       const fullRoute: RouteData = {
         Start_Point: {
           name: rawRoute.Start_Point.name,
           lat: startCoords.lat,
           lng: startCoords.lng,
         },
-        Route: routePoints,
+        Route: validRoutePoints,
         Destination: {
           name: rawRoute.Destination.name,
           lat: destinationCoords.lat,
@@ -145,15 +153,19 @@ export default function RouteUrlFetcher() {
 
       setRouteDetails(fullRoute);
       setMapsUrl(res.data.mapsUrl || null);
+
+      // Complete loading bar
+      loadingBarRef.current?.complete();
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to fetch route or geocode locations.");
+      loadingBarRef.current?.complete();
     } finally {
       setLoading(false);
     }
   }
 
-  const center = routeDetails ? { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng } : { lat: 1.3521, lng: 103.8198 }; // Singapore default
+  const center = routeDetails ? { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng } : { lat: 1.3521, lng: 103.8198 };
 
   const path = routeDetails
     ? [
@@ -168,14 +180,16 @@ export default function RouteUrlFetcher() {
   }
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen bg-white">
+      {/* Top loading bar */}
+      <LoadingBar color="#2563eb" ref={loadingBarRef} height={4} />
+
       {/* Collapsible sidebar */}
       <div
         className={`bg-white shadow-lg flex flex-col transition-width duration-300 ease-in-out ${
           collapsed ? "w-16" : "w-1/3 max-w-xs"
         } overflow-hidden`}
       >
-        {/* Toggle button */}
         <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -186,14 +200,13 @@ export default function RouteUrlFetcher() {
             {collapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
           </button>
 
-          <h1 className="text-sm font-semibold tracking-tight text-gray-900 ml-3">PCN Route URL Generator</h1>
+          <h1 className="text-sm font-semibold tracking-tight text-gray-900 ml-3">PCN AI Route Assistant</h1>
 
           <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-1" />
         </div>
 
-        {/* Content only visible if not collapsed */}
         {!collapsed && (
-          <Card className="flex-1 flex flex-col border-none outline-none shadow-lg">
+          <Card className="flex-1 flex flex-col border-none outline-none border-r-0 rounded-none !shadow-none">
             <CardContent className="flex-grow overflow-auto">
               <div className="space-y-6">
                 <div>
@@ -255,39 +268,33 @@ export default function RouteUrlFetcher() {
                 </div>
               </div>
 
-              {routeDetails && (
-                <div className="mt-6 w-full text-sm text-gray-700 overflow-auto max-h-64">
-                  <h2 className="font-semibold mb-3 text-center tracking-wide">Route Details</h2>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>
-                      <strong>Start Point:</strong> {routeDetails.Start_Point.name}
-                    </li>
-                    {routeDetails.Route.map((stop, idx) => (
-                      <li key={idx}>{stop.name}</li>
-                    ))}
-                    <li>
-                      <strong>Destination:</strong> {routeDetails.Destination.name}
-                    </li>
-                  </ul>
-                </div>
-              )}
+              <h2 className="font-semibold text-center tracking-wide mt-6 mb-4 ">Route Details</h2>
+              <div className="w-full text-sm text-gray-700 overflow-auto max-h-[45vh]">
+                {routeDetails && (
+                  <>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>
+                        <strong>Start Point:</strong> {routeDetails.Start_Point.name}
+                      </li>
+                      {routeDetails.Route.map((stop, idx) => (
+                        <li key={idx}>{stop.name}</li>
+                      ))}
+                      <li>
+                        <strong>Destination:</strong> {routeDetails.Destination.name}
+                      </li>
+                    </ul>
+                  </>
+                )}
+              </div>
             </CardContent>
 
             <CardFooter className="flex flex-col items-center gap-3">
               {mapsUrl && (
-                <>
-                  <Separator className="my-4 w-full border-gray-300" />
-                  <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-center break-words w-full"
-                  >
-                    <Button variant="outline" className="w-full cursor-pointer">
-                      Open Route in Google Maps
-                    </Button>
-                  </a>
-                </>
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-center break-words w-full">
+                  <Button variant="outline" className="w-full cursor-pointer">
+                    Open Route in Google Maps
+                  </Button>
+                </a>
               )}
 
               <Button
@@ -304,31 +311,45 @@ export default function RouteUrlFetcher() {
         )}
       </div>
 
-      {/* Map area */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={center}
-            zoom={13}
-            options={{
-              fullscreenControl: false,
-              zoomControl: false,
-              mapTypeControl: false,
-              streetViewControl: false,
-            }}
-          >
-            {routeDetails && (
-              <>
-                <Marker position={{ lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng }} title={routeDetails.Start_Point.name} />
-                {routeDetails.Route.map((stop, idx) => (
-                  <Marker key={idx} position={{ lat: stop.lat, lng: stop.lng }} title={stop.name} />
-                ))}
-                <Marker position={{ lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng }} title={routeDetails.Destination.name} />
-                <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
-              </>
-            )}
-          </GoogleMap>
+          <>
+            <div
+              className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20
+                bg-yellow-100 border border-yellow-400 text-yellow-800
+                px-4 py-2 rounded-md shadow-md select-none pointer-events-none
+                font-semibold text-sm"
+            >
+              Map Preview
+            </div>
+
+            <GoogleMap
+              mapContainerStyle={{
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+              }}
+              center={center}
+              zoom={13}
+              options={{
+                fullscreenControl: false,
+                zoomControl: false,
+                mapTypeControl: false,
+                streetViewControl: false,
+              }}
+            >
+              {routeDetails && (
+                <>
+                  <Marker position={{ lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng }} title={routeDetails.Start_Point.name} />
+                  {routeDetails.Route.map((stop, idx) => (
+                    <Marker key={idx} position={{ lat: stop.lat, lng: stop.lng }} title={stop.name} />
+                  ))}
+                  <Marker position={{ lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng }} title={routeDetails.Destination.name} />
+                  <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
+                </>
+              )}
+            </GoogleMap>
+          </>
         ) : (
           <div>Loading Map...</div>
         )}
