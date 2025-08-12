@@ -6,11 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+import { ArrowLeftIcon, ArrowRightIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 
-import { GoogleMap, Marker, Polyline, useJsApiLoader, Autocomplete, BicyclingLayer } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  Marker,
+  Polyline,
+  useJsApiLoader,
+  Autocomplete,
+  BicyclingLayer,
+  DirectionsService,
+  DirectionsRenderer,
+} from "@react-google-maps/api";
 
 import LoadingBar, { LoadingBarRef } from "react-top-loading-bar";
 
@@ -37,6 +45,8 @@ function getNumberedMarkerIcon(number: number, color = "#2563eb") {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+const GOOGLE_MAPS_LIBRARIES = ["places"] as const; // or string[]
+
 export default function RouteUrlFetcher() {
   const [originInput, setOriginInput] = useState("");
   const [destinationInput, setDestinationInput] = useState("");
@@ -45,6 +55,8 @@ export default function RouteUrlFetcher() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const directionsRef = useRef<google.maps.DirectionsResult | null>(null);
 
   const loadingBarRef = useRef<LoadingBarRef>(null);
 
@@ -489,34 +501,61 @@ export default function RouteUrlFetcher() {
             >
               {routeDetails && (
                 <>
-                  {/* Start marker is number 1 */}
-                  <Marker
-                    position={routeDetails.Start_Point}
-                    title={`1: ${routeDetails.Start_Point.name}`}
-                    icon={getNumberedMarkerIcon(1, "#22c55e")} // green
-                  />
+                  {/* Start marker */}
+                  <Marker position={routeDetails.Start_Point} icon={getNumberedMarkerIcon(1, "#22c55e")} />
 
-                  {/* Intermediate stops start numbering from 2 */}
-                  {routeDetails.Route.map((stop, idx) => (
+                  {/* Intermediate route markers */}
+                  {routeDetails.Route.map((point, index) => (
                     <Marker
-                      key={idx}
-                      position={stop}
-                      title={`${idx + 2}: ${stop.name}`}
-                      icon={getNumberedMarkerIcon(idx + 2, "#3b82f6")} // blue
+                      key={`route-point-${index}`}
+                      position={{ lat: point.lat, lng: point.lng }}
+                      icon={getNumberedMarkerIcon(index + 2, "#3b82f6")} // number from 2 up
                     />
                   ))}
 
-                  {/* Destination marker number is last */}
-                  <Marker
-                    position={routeDetails.Destination}
-                    title={`${routeDetails.Route.length + 2}: ${routeDetails.Destination.name}`}
-                    icon={getNumberedMarkerIcon(routeDetails.Route.length + 2, "#ef4444")} // red
+                  {/* Destination marker */}
+                  <Marker position={routeDetails.Destination} icon={getNumberedMarkerIcon(routeDetails.Route.length + 2, "#ef4444")} />
+
+                  {/* Directions Service and Renderer */}
+                  <DirectionsService
+                    options={{
+                      origin: routeDetails.Start_Point,
+                      destination: routeDetails.Destination,
+                      travelMode: google.maps.TravelMode.BICYCLING,
+                      waypoints: routeDetails.Route.map((point) => ({
+                        location: { lat: point.lat, lng: point.lng },
+                        stopover: true,
+                      })),
+                      optimizeWaypoints: false, // keeps your route order as is
+                    }}
+                    callback={(res, status) => {
+                      if (status === "OK" && res) {
+                        if (!directionsRef.current || JSON.stringify(directionsRef.current) !== JSON.stringify(res)) {
+                          directionsRef.current = res;
+                          setDirections(res);
+                        }
+                      } else {
+                        console.error("Directions request failed:", status);
+                      }
+                    }}
                   />
 
-                  <Polyline path={path} options={{ strokeColor: "#0000FF", strokeWeight: 3 }} />
-                  <BicyclingLayer />
+                  {directions && (
+                    <DirectionsRenderer
+                      options={{
+                        directions: directions,
+                        suppressMarkers: true, // so we keep custom markers
+                        polylineOptions: {
+                          strokeColor: "#3b82f6",
+                          strokeWeight: 4,
+                        },
+                      }}
+                    />
+                  )}
                 </>
               )}
+
+              <BicyclingLayer />
             </GoogleMap>
           </>
         ) : (
