@@ -237,6 +237,11 @@ export default function RouteUrlFetcher() {
       setRouteDetails(fullRoute);
       setMapsUrl(res.data.mapsUrl || null);
 
+      if (fullRoute) {
+        const googleMapsUrl = buildGoogleMapsUrl(fullRoute);
+        setMapsUrl(googleMapsUrl);
+      }
+
       loadingBarRef.current?.complete();
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -254,16 +259,25 @@ export default function RouteUrlFetcher() {
 
   const center = routeDetails ? { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng } : { lat: 1.3521, lng: 103.8198 };
 
-  const path = routeDetails
-    ? [
-        { lat: routeDetails.Start_Point.lat, lng: routeDetails.Start_Point.lng },
-        ...routeDetails.Route.map((p) => ({ lat: p.lat, lng: p.lng })),
-        { lat: routeDetails.Destination.lat, lng: routeDetails.Destination.lng },
-      ]
-    : [];
-
   if (loadError) {
     return <div>Error loading Google Maps</div>;
+  }
+
+  function buildGoogleMapsUrl(route: RouteData): string {
+    const origin = `${route.Start_Point.lat},${route.Start_Point.lng}`;
+    const destination = `${route.Destination.lat},${route.Destination.lng}`;
+    const waypoints = route.Route.map((p) => `${p.lat},${p.lng}`).join("|");
+
+    const url = new URL("https://www.google.com/maps/dir/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("origin", origin);
+    url.searchParams.set("destination", destination);
+    if (waypoints.length > 0) {
+      url.searchParams.set("waypoints", waypoints);
+    }
+    url.searchParams.set("travelmode", "bicycling");
+
+    return url.toString();
   }
 
   return (
