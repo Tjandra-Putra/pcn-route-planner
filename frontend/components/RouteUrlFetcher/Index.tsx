@@ -146,13 +146,32 @@ export default function RouteUrlFetcher() {
       {/* Sidebar */}
       <div
         className={`transition-all duration-300 flex flex-col border-r border-gray-200 bg-white shadow-md
-          ${collapsed ? "w-12" : "w-120"} h-full  relative`}
+          ${collapsed ? "md:w-13" : "w-full md:w-[480px]"} h-auto md:h-full relative max-w-full`}
       >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15">
+        {/* ===== Mobile Navbar (only visible on small screens) ===== */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-2 h-15 bg-white md:hidden">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 hover:bg-gray-100 focus:outline-none"
+            className="p-2 hover:bg-gray-100 focus:outline-none cursor-pointer"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
+          </button>
+
+          <div className="flex flex-col items-center flex-grow ml-3 overflow-hidden">
+            <h1 className="text-sm font-semibold tracking-tight text-gray-900 truncate">PCN AI Route Assistant</h1>
+            <p className="text-xs text-gray-500 truncate">Route Info & Controls</p>
+          </div>
+
+          <InfoCircledIcon className="w-5 h-5 text-gray-400 ml-2" />
+        </div>
+
+        {/* ===== Desktop Navbar (only visible on md and up) ===== */}
+        <div className="hidden md:flex items-center justify-between border-b border-gray-200 px-2 h-15 bg-white">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-2 hover:bg-gray-100 focus:outline-none cursor-pointer"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -167,6 +186,7 @@ export default function RouteUrlFetcher() {
           )}
         </div>
 
+        {/* Sidebar content (hide when collapsed) */}
         {!collapsed && (
           <div className="flex flex-col flex-grow min-h-0">
             <Card className="flex flex-col flex-grow min-h-0 border-none outline-none rounded-none !shadow-none">
@@ -223,7 +243,7 @@ export default function RouteUrlFetcher() {
                       setError(null);
                       setDirections(null);
                     }}
-                    className="w-full font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+                    className="w-full font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer mb-4 md:mb-0"
                   >
                     Restart Over
                   </Button>
@@ -231,7 +251,7 @@ export default function RouteUrlFetcher() {
                   <Button
                     onClick={fetchRoute}
                     disabled={loading || !originInput || !destinationInput}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer"
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer mb-4 md:mb-0"
                   >
                     {loading ? "Hang Tight, We're Fetching Your Route..." : "Get Route"}
                   </Button>
@@ -245,7 +265,7 @@ export default function RouteUrlFetcher() {
       </div>
 
       {/* Map container */}
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative min-h-[300px] md:min-h-0 h-64 md:h-auto">
         {isLoaded ? (
           <>
             <div
