@@ -1,11 +1,5 @@
-import { Button } from "@/components/ui/button";
-import FullScreenMap from "@/components/FullScreenMap";
-import PcnRouteMap from "@/components/PcnRouteMap";
+import RouteUrlFetcher from "@/components/RouteUrlFetcher/Index";
 
 export default function Home() {
-  return (
-    <>
-      <PcnRouteMap />
-    </>
-  );
+  return <RouteUrlFetcher />;
 }
