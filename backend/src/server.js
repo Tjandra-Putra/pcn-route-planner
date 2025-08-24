@@ -14,33 +14,32 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-const __dirname = path.resolve(); // Get the current directory name
+const __dirname = path.resolve(); // Current directory
 
-// Middleware: CORS setup
-const allowedOrigins = [
-  "http://localhost:3000", // Local frontend dev
-  "https://pcn-route-planner-client.vercel.app", // Deployed frontend
-];
+// Allowed origins based on environment
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? [process.env.CLIENT_URL_PROD] // e.g., https://pcn-route-planner-client.vercel.app
+    : [process.env.CLIENT_URL_DEV, process.env.CLIENT_URL_PROD]; // e.g., http://localhost:3000 + prod URL
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin like mobile apps or curl requests
+      // Allow requests with no origin (like Postman)
       if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-        return callback(new Error(msg), false);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS policy: Origin not allowed"));
       }
-      return callback(null, true);
     },
     credentials: true,
   })
 );
 
-app.use(express.json()); // Parse JSON bodies
-app.use(rateLimiter); // Apply rate limiting
-app.use(logger); // Log requests
+app.use(express.json());
+app.use(rateLimiter);
+app.use(logger);
 
 // Master Routes
 app.use("/api/pcn", pcnRoutes);
@@ -51,16 +50,15 @@ app.use(errorHandler);
 // Swagger docs
 swaggerDocs(app);
 
-// Serve static files from the frontend build directory (optional)
-// if (process.env.NODE_ENV === "production") {
-//   app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-//   app.get("*", (req, res) => {
-//     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-//   });
-// }
+// Serve static files in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+}
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port: ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });

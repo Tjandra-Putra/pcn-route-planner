@@ -95,7 +95,7 @@ export default function RouteUrlFetcher() {
     loadingBarRef.current?.continuousStart();
 
     try {
-      const res = await axios.post("http://localhost:5001/api/pcn/route", {
+      const res = await axios.post(`${process.env.API_URL}/pcn/route`, {
         current_location: originInput,
         destination_location: destinationInput,
       });
