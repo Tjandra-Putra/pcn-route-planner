@@ -3,8 +3,9 @@
 import { useRef } from "react";
 import { GoogleMap, Marker, DirectionsService, DirectionsRenderer, BicyclingLayer } from "@react-google-maps/api";
 
-import { getNumberedMarkerIcon } from "../../lib/utils";
-import type { RouteData } from "../../types/route";
+import { getNumberedMarkerIcon } from "@/lib/utils";
+import type { RouteData } from "@/types/route";
+
 interface RouteMapProps {
   routeDetails: RouteData | null;
   directions: google.maps.DirectionsResult | null;

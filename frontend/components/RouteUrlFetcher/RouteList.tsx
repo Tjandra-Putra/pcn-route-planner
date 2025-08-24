@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import type { RouteData } from "../../types/route";
+import type { RouteData } from "@/types/route";
 
 interface RouteListProps {
   routeDetails: RouteData | null;
