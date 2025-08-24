@@ -13,30 +13,32 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const __dirname = path.resolve();
 
-const __dirname = path.resolve(); // Current directory
+// Allowed origins
+const allowedOrigins = [
+  process.env.CLIENT_URL_DEV, // e.g., http://localhost:3000
+  process.env.CLIENT_URL_PROD, // e.g., https://pcn-route-planner-client.vercel.app
+];
 
-// Allowed origins based on environment
-const allowedOrigins =
-  process.env.NODE_ENV === "production" ? [process.env.CLIENT_URL_PROD] : [process.env.CLIENT_URL_DEV, process.env.CLIENT_URL_PROD];
+// CORS middleware using the cors package
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman)
+      if (!origin) return callback(null, true);
+      if (!allowedOrigins.includes(origin)) {
+        return callback(new Error("CORS policy: Origin not allowed"), false);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // allows cookies
+  })
+);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  console.log("Request Origin:", origin);
-
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header("Access-Control-Allow-Credentials", "true");
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(204); // Preflight handled
-    }
-    next();
-  } else {
-    next(new Error("CORS policy: Origin not allowed"));
-  }
-});
+// Handle preflight requests globally
+app.options("*", cors());
 
 app.use(express.json());
 app.use(rateLimiter);
@@ -45,13 +47,13 @@ app.use(logger);
 // Master Routes
 app.use("/api/pcn", pcnRoutes);
 
-// Error handling middleware
-app.use(errorHandler);
-
 // Swagger docs
 swaggerDocs(app);
 
-// Serve static files in production
+// Error handling middleware
+app.use(errorHandler);
+
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get("*", (req, res) => {
