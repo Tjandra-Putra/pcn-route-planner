@@ -18,24 +18,25 @@ const __dirname = path.resolve(); // Current directory
 
 // Allowed origins based on environment
 const allowedOrigins =
-  process.env.NODE_ENV === "production"
-    ? [process.env.CLIENT_URL_PROD] // e.g., https://pcn-route-planner-client.vercel.app
-    : [process.env.CLIENT_URL_DEV, process.env.CLIENT_URL_PROD]; // e.g., http://localhost:3000 + prod URL
+  process.env.NODE_ENV === "production" ? [process.env.CLIENT_URL_PROD] : [process.env.CLIENT_URL_DEV, process.env.CLIENT_URL_PROD];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error("CORS policy: Origin not allowed"));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log("Request Origin:", origin);
+
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header("Access-Control-Allow-Credentials", "true");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204); // Preflight handled
+    }
+    next();
+  } else {
+    next(new Error("CORS policy: Origin not allowed"));
+  }
+});
 
 app.use(express.json());
 app.use(rateLimiter);
