@@ -15,7 +15,7 @@ import { useGoogleMaps } from "../../hooks/useGoogleMaps";
 import { useGeocoder } from "../../hooks/useGeocoder";
 import { useUserLocation } from "../../hooks/useUserLocation";
 
-import { buildGoogleMapsUrl } from "@/lib/utils";
+import { buildGoogleMapsUrl } from "../../lib/utils";
 import type { RouteData } from "../../types/route";
 
 export default function RouteUrlFetcher() {
