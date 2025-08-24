@@ -9,37 +9,19 @@ import errorHandler from "./middleware/errorHandler.js";
 import logger from "./middleware/logger.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
+const corsOptions = {
+  // Allows request from these origins
+  origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app", "https://pcn-route-planner-server.vercel.app"],
+  credentials: true,
+};
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
-// Allowed origins
-const allowedOrigins = [
-  process.env.CLIENT_URL_DEV, // e.g., http://localhost:3000
-  process.env.CLIENT_URL_PROD, // e.g., https://pcn-route-planner-client.vercel.app
-];
-
-// CORS middleware using the cors package
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like Postman)
-      if (!origin) return callback(null, true);
-      if (!allowedOrigins.includes(origin)) {
-        return callback(new Error("CORS policy: Origin not allowed"), false);
-      }
-      return callback(null, true);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true, // allows cookies
-  })
-);
-
-// Handle preflight requests globally
-app.options("*", cors());
-
+app.use(cors(corsOptions)); //  important to ensure that the app.use(cors(corsOptions)) middleware is placed before your route handlers. This ensures that the CORS headers are added to the server's responses before the routes are processed.
 app.use(express.json());
 app.use(rateLimiter);
 app.use(logger);
