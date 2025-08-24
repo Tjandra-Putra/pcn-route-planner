@@ -10,7 +10,6 @@ import logger from "./middleware/logger.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
 const corsOptions = {
-  // Allows request from these origins
   origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app", "https://pcn-route-planner-server.vercel.app"],
   credentials: true,
 };
@@ -21,7 +20,12 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
-app.use(cors(corsOptions)); //  important to ensure that the app.use(cors(corsOptions)) middleware is placed before your route handlers. This ensures that the CORS headers are added to the server's responses before the routes are processed.
+// CORS must come before any routes
+app.use(cors(corsOptions));
+
+// Ensure OPTIONS (preflight) requests get CORS headers
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 app.use(rateLimiter);
 app.use(logger);
