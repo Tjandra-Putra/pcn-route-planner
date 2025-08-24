@@ -16,14 +16,27 @@ const PORT = process.env.PORT || 5001;
 
 const __dirname = path.resolve(); // Get the current directory name
 
-// Middleware
-if (process.env.NODE_ENV !== "production") {
-  app.use(
-    cors({
-      origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"], // Allow requests from the frontend
-    })
-  );
-}
+// Middleware: CORS setup
+const allowedOrigins = [
+  "http://localhost:3000", // Local frontend dev
+  "https://pcn-route-planner-client.vercel.app", // Deployed frontend
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin like mobile apps or curl requests
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json()); // Parse JSON bodies
 app.use(rateLimiter); // Apply rate limiting
@@ -38,11 +51,10 @@ app.use(errorHandler);
 // Swagger docs
 swaggerDocs(app);
 
-// Serve static files from the frontend build directory (Deployment)
+// Serve static files from the frontend build directory (optional)
 // if (process.env.NODE_ENV === "production") {
 //   app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-//   // Serve the index.html file for any other routes
 //   app.get("*", (req, res) => {
 //     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 //   });
@@ -50,5 +62,5 @@ swaggerDocs(app);
 
 // Start the server
 app.listen(PORT, () => {
-  console.log("Server is running on port:", PORT);
+  console.log(`Server is running on port: ${PORT}`);
 });
