@@ -15,7 +15,7 @@ import { useGoogleMaps } from "../../hooks/useGoogleMaps";
 import { useGeocoder } from "../../hooks/useGeocoder";
 import { useUserLocation } from "../../hooks/useUserLocation";
 
-import { buildGoogleMapsUrl } from "../../lib/utils";
+import { buildGoogleMapsUrl } from "@/lib/utils";
 import type { RouteData } from "../../types/route";
 
 export default function RouteUrlFetcher() {
@@ -233,7 +233,15 @@ export default function RouteUrlFetcher() {
                   </a>
                 )}
 
-                {routeDetails ? (
+                <Button
+                  onClick={fetchRoute}
+                  disabled={loading || !originInput || !destinationInput}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white cursor-pointer mb-4 md:mb-0"
+                >
+                  {loading ? "Hang Tight, We're Fetching Your Route..." : "Get Route"}
+                </Button>
+
+                {/* {routeDetails ? (
                   <Button
                     onClick={() => {
                       setOriginInput("");
@@ -255,7 +263,7 @@ export default function RouteUrlFetcher() {
                   >
                     {loading ? "Hang Tight, We're Fetching Your Route..." : "Get Route"}
                   </Button>
-                )}
+                )} */}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </CardFooter>
