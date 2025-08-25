@@ -10,12 +10,11 @@ import logger from "./middleware/logger.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
 const corsOptions = {
-  // origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app", "https://pcn-route-planner-server.vercel.app"],
-  origin: "https://pcn-route-planner-client.vercel.app",
+  origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app", "https://pcn-route-planner-server.vercel.app"],
   credentials: true,
 };
 
-dotenv.config();  
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
