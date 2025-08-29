@@ -19,9 +19,10 @@ const __dirname = path.resolve();
 const corsOptions = {
   // origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"],
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false,
+  credentials: true,
+  methods: ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type"],
+  exposedHeaders: ["Content-Type"],
 };
 
 // Apply CORS for all requests
