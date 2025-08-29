@@ -1,21 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "src/server.js",
-      "use": "@vercel/node"
-    }
-  ],
+  "builds": [{ "src": "src/server.js", "use": "@vercel/node" }],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "src/server.js",
-      "headers": {
-        "Access-Control-Allow-Origin": "https://pcn-route-planner-client.vercel.app",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "dest": "src/server.js"
     }
   ]
 }
