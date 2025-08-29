@@ -10,7 +10,7 @@ import logger from "./middleware/logger.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
