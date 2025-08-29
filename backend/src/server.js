@@ -17,19 +17,18 @@ const __dirname = path.resolve();
 
 // CORS options
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"],
+  // origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
 // Apply CORS for all requests
-// app.use(cors(corsOptions));
-app.use(cors());
-app.options("*", cors());
+app.use(cors(corsOptions));
 
 // Handle preflight OPTIONS requests
-// app.options("*", cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(rateLimiter);
