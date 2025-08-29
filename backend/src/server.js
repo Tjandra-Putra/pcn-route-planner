@@ -24,10 +24,12 @@ const corsOptions = {
 };
 
 // Apply CORS for all requests
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors());
+app.options("*", cors());
 
 // Handle preflight OPTIONS requests
-app.options("*", cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(rateLimiter);
