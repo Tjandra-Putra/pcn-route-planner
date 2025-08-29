@@ -10,7 +10,7 @@ import logger from "./middleware/logger.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
 const corsOptions = {
-  origin: "*",
+  origin: ["http://localhost:3000", "https://pcn-route-planner-client.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -23,8 +23,16 @@ const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
 // CORS must come before any routes
-app.use(cors(corsOptions));
-
+// app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://pcn-route-planner-client.vercel.app");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 app.options("*", cors(corsOptions)); // <-- Handle preflight requests
 app.use(express.json());
 app.use(rateLimiter);
