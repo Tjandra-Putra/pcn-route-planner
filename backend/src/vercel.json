@@ -8,8 +8,14 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "src/server.js"
+      "src": "/api/(.*)",
+      "dest": "src/server.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://pcn-route-planner-client.vercel.app",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Credentials": "true"
+      }
     }
   ]
 }
